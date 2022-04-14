@@ -113,7 +113,7 @@ dim_in = 28*28
 dim_out = 10
 reslayer_size = 10
 dim_resblock = 2*reslayer_size*reslayer_size+reslayer_size
-no_reslayers=2
+no_reslayers= int(2)
 flat_parameter_tensor = torch.ones(28*28*reslayer_size+no_reslayers*dim_resblock+reslayer_size*10)
 print(flat_parameter_tensor.size())
 p = prolongation(flat_parameter_tensor,reslayer_size,no_reslayers,dim_in,dim_out)
@@ -121,11 +121,11 @@ print(p.size())
 
 # as above, only in matrix form
 def prolongation_matrix( reslayer_size, no_reslayers,dim_in, dim_out, sparse=True):
-    dim_resblock = 2 * reslayer_size * reslayer_size + reslayer_size
-    no_reslayers_fine = 2 * no_reslayers - 1
+    dim_resblock = int(2 * reslayer_size * reslayer_size + reslayer_size)
+    no_reslayers_fine = int(2 * no_reslayers - 1)
     dimQ1=dim_in*reslayer_size
     dimQ2=reslayer_size*dim_out
-    P = torch.cat((torch.eye(dimQ1), torch.zeros(dimQ1,no_reslayers*dim_resblock+dimQ2)),1)
+    P = torch.cat((torch.eye(dimQ1), torch.zeros(dimQ1,int(no_reslayers*dim_resblock+dimQ2))),1)
     for i in range(no_reslayers):
         rb = torch.zeros(dim_resblock, dimQ1)
         z = torch.zeros(dim_resblock,no_reslayers*dim_resblock+dimQ2+dimQ1)
