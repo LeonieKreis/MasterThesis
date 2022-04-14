@@ -96,10 +96,10 @@ class ResNet1_fine(nn.Module):
         return input
 
 
-def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers): # from coarse to fine grid
+def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers, dim_in, dim_out): # from coarse to fine grid
     dim_resblock = 2*reslayer_size*reslayer_size+reslayer_size
     no_reslayers_fine = 2*no_reslayers -1
-    Q1flat, Res_coarse_flat, Q2flat = torch.split(flat_parameter_tensor, [28*28*reslayer_size,no_reslayers*dim_resblock,reslayer_size*10])
+    Q1flat, Res_coarse_flat, Q2flat = torch.split(flat_parameter_tensor, [dim_in*reslayer_size,no_reslayers*dim_resblock,reslayer_size*dim_out])
     t = torch.cat((Q1flat,Res_coarse_flat[0:dim_resblock]))
     for i in range(1,no_reslayers):
         t = torch.cat((t,torch.zeros(dim_resblock)))
@@ -108,20 +108,23 @@ def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers): # from coa
     t = torch.cat((t,Q2flat))
     return t
 
+
+dim_in = 28*28
+dim_out = 10
 reslayer_size = 10
 dim_resblock = 2*reslayer_size*reslayer_size+reslayer_size
 no_reslayers=2
 flat_parameter_tensor = torch.ones(28*28*reslayer_size+no_reslayers*dim_resblock+reslayer_size*10)
 print(flat_parameter_tensor.size())
-p = prolongation(flat_parameter_tensor,reslayer_size,no_reslayers)
+p = prolongation(flat_parameter_tensor,reslayer_size,no_reslayers,dim_in,dim_out)
 print(p.size())
 
 # as above, only in matrix form
-def prolongation_matrix( reslayer_size, no_reslayers, sparse=True):
+def prolongation_matrix( reslayer_size, no_reslayers,dim_in, dim_out, sparse=True):
     dim_resblock = 2 * reslayer_size * reslayer_size + reslayer_size
     no_reslayers_fine = 2 * no_reslayers - 1
-    dimQ1=28*28*reslayer_size
-    dimQ2=reslayer_size*10
+    dimQ1=dim_in*reslayer_size
+    dimQ2=reslayer_size*dim_out
     P = torch.cat((torch.eye(dimQ1), torch.zeros(dimQ1,no_reslayers*dim_resblock+dimQ2)),1)
     for i in range(no_reslayers):
         rb = torch.zeros(dim_resblock, dimQ1)
@@ -143,17 +146,17 @@ def prolongation_matrix( reslayer_size, no_reslayers, sparse=True):
         P.to_sparse()
     return P
 
-P = prolongation_matrix(reslayer_size, no_reslayers, sparse=False)
+P = prolongation_matrix(reslayer_size, no_reslayers,dim_in, dim_out, sparse=False)
 print('size of prolongation matrix',P.size())
 
-def restriction_matrix( reslayer_size, no_reslayers, sparse=True):
-    P = prolongation_matrix(reslayer_size,no_reslayers,sparse=False)
+def restriction_matrix( reslayer_size, no_reslayers,dim_in,dim_out, sparse=True):
+    P = prolongation_matrix(reslayer_size,no_reslayers,dim_in,dim_out,sparse=False)
     Q = torch.t(P)
     if sparse:
         Q = Q.to_sparse()
     return Q
 
-Q = restriction_matrix(reslayer_size, no_reslayers, sparse=True)
+Q = restriction_matrix(reslayer_size, no_reslayers,dim_in, dim_out, sparse=True)
 print('size of restriction matrix',Q.size())
 
 

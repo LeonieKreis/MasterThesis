@@ -10,7 +10,7 @@ dim_in = 28*28
 dim_out = 10
 reslayer_size = 10
 no_reslayers_fine = 3
-no_reslayers = (no_reslayers_fine-1)/2
+no_reslayers = (no_reslayers_fine+1)/2
 
 resnet_fine = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5)
 resnet_coarse = ResNet1_coarse(dim_in,reslayer_size,dim_out,ResBlock1,h=1)
@@ -82,7 +82,7 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             optimizer_coarse.step()
         ## prolongate to fine grid
         vec_coarse = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
-        vec_fine = torch.mm(prolongation_matrix(reslayer_size, no_reslayers, sparse=False),vec_coarse)
+        vec_fine = torch.mm(prolongation_matrix(reslayer_size, no_reslayers,dim_in, dim_out, sparse=False),vec_coarse)
         torch.nn.utils.vector_to_parameters(vec_fine,model_fine.parameters())
         ''' model_fine.layer0.weight = model_coarse.layer0.weight
         model_fine.layer1.l1.weight = model_coarse.layer1.l1.weight
@@ -115,11 +115,11 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             g.append(param.grad.view(-1))
         g = torch.cat(g)
         ###4) restrict gradient to coarse level
-        g2 = torch.mm(restriction_matrix(reslayer_size,no_reslayers,sparse=False),g)
+        g2 = torch.mm(restriction_matrix(reslayer_size,no_reslayers, dim_in, dim_out,sparse=False),g)
 
         ##2) restrict parameters to coarser level
         vec_fine = torch.nn.utils.parameters_to_vector(model_fine.parameters())
-        vec_coarse = torch.mm(restriction_matrix(reslayer_size,no_reslayers,sparse=False))
+        vec_coarse = torch.mm(restriction_matrix(reslayer_size,no_reslayers,dim_in, dim_out,sparse=False))
         x1_bar = vec_coarse
         torch.nn.utils.vector_to_parameters(vec_coarse, model_coarse.parameters())
         '''model_coarse.layer0.weight = model_fine.layer0.weight
@@ -167,7 +167,7 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         ### todo 8) compute prolongation of difference
         x2_bar = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
         e2_bar = torch.sub(x2_bar,x1_bar)
-        e2 = torch.mm(prolongation_matrix(reslayer_size,no_reslayers,sparse=False))
+        e2 = torch.mm(prolongation_matrix(reslayer_size,no_reslayers, dim_in, dim_out,sparse=False))
 
         ''''## prolongate the parameters to the finer level (not needed)
         model_fine.layer0.weight = model_coarse.layer0.weight
