@@ -6,11 +6,11 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
-from Nets import ResBlock1, ResNet1_fine, ResNet1_coarse, restriction_matrix, prolongation_matrix
+from Nets import ResBlock1, ResNet1_fine, ResNet1_coarse, restriction_matrix, prolongation_matrix, prolongation, restriction
 
 dim_in = 28*28
 dim_out = 10
-reslayer_size = 20
+reslayer_size = 100
 no_reslayers_fine = 3
 no_reslayers = int((no_reslayers_fine+1)/2)
 
@@ -43,10 +43,10 @@ train_dataloader = DataLoader(training_data, batch_size=batch_size)
 test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
 
-for X, y in test_dataloader:
-    print(f"Shape of X [N, C, H, W]: {X.shape}")
-    print(f"Shape of y: {y.shape} {y.dtype}")
-    break
+#for X, y in test_dataloader:
+#    print(f"Shape of X [N, C, H, W]: {X.shape}")
+#    print(f"Shape of y: {y.shape} {y.dtype}")
+#    break
 
 
 model = resnet_fine
@@ -62,13 +62,15 @@ loss_fn_coarse = nn.CrossEntropyLoss() # the modified loss fun for multilevel wi
 optimizer_fine = torch.optim.SGD(model_fine.parameters(), lr=1e-3)
 optimizer_coarse = torch.optim.SGD(model_coarse.parameters(), lr=1e-3)
 
-N1, N2, N3, N4 = 1,1,2,1
+N1, N2, N3, N4 = 1,1,1,1
 
 ## 2-level nested iteration and mu-cycle
-def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr):
+def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr,no_reslayers_coarse, prolong_matrix = False):
     toc = time.perf_counter()
-    prolong = prolongation_matrix(reslayer_size, no_reslayers,dim_in,dim_out, sparse = True)
-    restr = torch.t(prolong)
+    no_reslayers_fine = int(2* no_reslayers_coarse -1)
+    if prolong_matrix:
+        prolong = prolongation_matrix(reslayer_size, no_reslayers,dim_in,dim_out, sparse = True)
+        restr = torch.t(prolong)
     size = len(dataloader.dataset)
     model_fine.train()
     model_coarse.train()
@@ -91,7 +93,10 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
 
         ## prolongate to fine grid
         vec_coarse = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
-        vec_fine = torch.mv(prolong,vec_coarse)
+        if prolong_matrix:
+            vec_fine = torch.mv(prolong,vec_coarse)
+        else:
+            vec_fine = prolongation(vec_coarse, reslayer_size, no_reslayers_coarse, dim_in, dim_out)
         torch.nn.utils.vector_to_parameters(vec_fine,model_fine.parameters())
 
         #start V-cycle
@@ -114,11 +119,17 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         g = torch.cat(g)
 
         ###4) restrict gradient to coarse level
-        g2 = torch.mv(restr,g)
+        if prolong_matrix:
+            g2 = torch.mv(restr,g)
+        else:
+            g2 = restriction(g,reslayer_size,no_reslayers_fine,dim_in,dim_out)
 
         ##2) restrict parameters to coarser level
         vec_fine = torch.nn.utils.parameters_to_vector(model_fine.parameters())
-        vec_coarse = torch.mv(restr, vec_fine)
+        if prolong_matrix:
+            vec_coarse = torch.mv(restr, vec_fine)
+        else:
+            vec_coarse = restriction(vec_fine,reslayer_size, no_reslayers_fine, dim_in,dim_out)
         x1_bar = vec_coarse
         torch.nn.utils.vector_to_parameters(vec_coarse, model_coarse.parameters())
 
@@ -157,7 +168,10 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         ### 8) compute prolongation of difference
         x2_bar = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
         e2_bar = torch.sub(x2_bar,x1_bar)
-        e2 = torch.mv(prolong,e2_bar)
+        if prolong_matrix:
+            e2 = torch.mv(prolong,e2_bar)
+        else:
+            e2 = prolongation(e2_bar,reslayer_size,no_reslayers_coarse,dim_in,dim_out)
 
         ## 9) update fine weights (maybe with line search)
         ## for now, without line search
@@ -236,11 +250,14 @@ def test(dataloader, model, loss_fn):
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 print('First classical training!')
-epochs = 1 #2#5
+toc = time.perf_counter()
+epochs = 5 #2#5
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train_classical(train_dataloader, model, loss_fn, optimizer_fine)
     test(test_dataloader, model, loss_fn)
+tic = time.perf_counter()
+print('Needed time for the whole classical training: ', tic-toc)
 #print('Now we look at state_dict.')
 #for key in model.state_dict():
     #print(key)
@@ -259,13 +276,18 @@ for t in range(epochs):
 #print(grads.shape)
 #print(paras.shape)
 #print(grads)
-print("Done!")
+
 
 ## multilevel training:
 print('Now 2-level-training!')
+toc = time.perf_counter()
 lr = 1e-3
-epochs = 1
+no_reslayers_coarse=2
+epochs = 2
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr)
+    train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse)
     test(test_dataloader, model_fine, loss_fn)
+tic = time.perf_counter()
+print('Needed time for the whole 2-level training: ', tic-toc)
+print("Done!")

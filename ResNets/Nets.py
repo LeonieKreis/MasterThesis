@@ -96,28 +96,36 @@ class ResNet1_fine(nn.Module):
         return input
 
 
-def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers, dim_in, dim_out): # from coarse to fine grid
+def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers_coarse, dim_in, dim_out): # from coarse to fine grid
+    # the discretization correction of the W_2 is not implemented yet
+    # w_2finee = 2*w_2coarse
     dim_resblock = 2*reslayer_size*reslayer_size+reslayer_size
-    no_reslayers_fine = 2*no_reslayers -1
-    Q1flat, Res_coarse_flat, Q2flat = torch.split(flat_parameter_tensor, [dim_in*reslayer_size,no_reslayers*dim_resblock,reslayer_size*dim_out])
+    no_reslayers_fine = 2*no_reslayers_coarse -1
+    Q1flat, Res_coarse_flat, Q2flat = torch.split(flat_parameter_tensor, [dim_in*reslayer_size,no_reslayers_coarse*dim_resblock,reslayer_size*dim_out])
+    #in each resblock, the last reslayer_size^2 parameters must be corrected with multiplicative factor 2
     t = torch.cat((Q1flat,Res_coarse_flat[0:dim_resblock]))
-    for i in range(1,no_reslayers):
+    for i in range(1,no_reslayers_coarse):
         t = torch.cat((t,torch.zeros(dim_resblock)))
         t2 = Res_coarse_flat[i*dim_resblock:(i+1)*dim_resblock]
         t = torch.cat((t,t2))
     t = torch.cat((t,Q2flat))
     return t
 
-def restriction(flat_parameter_tensor, reslayer_size, no_reslayers, dim_in, dim_out):
+def restriction(flat_parameter_tensor, reslayer_size, no_reslayers_fine, dim_in, dim_out): # the discretization correction of the W_2 is not implemented yet
+    #w_2coarse = 0.5*w_2fine
+    # in each resblock, the last reslayer_size^2 parameters must be corrected with multiplicative factor 0.5
     dim_resblock = 2 * reslayer_size * reslayer_size + reslayer_size
-    no_reslayers_coarse = int((no_reslayers + 1)/2)
+    no_reslayers_coarse = int((no_reslayers_fine + 1)/2)
     Q1flat, Res_fine_flat, Q2flat = torch.split(flat_parameter_tensor,
-                                                  [dim_in * reslayer_size, no_reslayers * dim_resblock,
+                                                  [dim_in * reslayer_size, no_reslayers_fine * dim_resblock,
                                                    reslayer_size * dim_out])
-    t = torch.cat((Q1flat,Res_coarse_flat[0:dim_resblock]))
-    for i in range(no_reslayers):
-
-    #todo
+    t = torch.cat((Q1flat,Res_fine_flat[0:dim_resblock]))
+    for i in range(1,no_reslayers_fine):
+        if i%2 ==0: #i even
+            t2 = Res_fine_flat[i*dim_resblock:(i+1)*dim_resblock]
+            t = torch.cat((t,t2))
+        #else: # i uneven
+            #do nothing, these resblocks will be cut out
     t = torch.cat((t,Q2flat))
     return t
 
@@ -128,9 +136,9 @@ reslayer_size = 10
 dim_resblock = 2*reslayer_size*reslayer_size+reslayer_size
 no_reslayers= int(2)
 flat_parameter_tensor = torch.ones(28*28*reslayer_size+no_reslayers*dim_resblock+reslayer_size*10)
-print(flat_parameter_tensor.size())
+#print(flat_parameter_tensor.size())
 p = prolongation(flat_parameter_tensor,reslayer_size,no_reslayers,dim_in,dim_out)
-print(p.size())
+#print(p.size())
 
 # as above, only in matrix form
 def prolongation_matrix( reslayer_size, no_reslayers,dim_in, dim_out, sparse=True):
@@ -160,7 +168,7 @@ def prolongation_matrix( reslayer_size, no_reslayers,dim_in, dim_out, sparse=Tru
     return P
 
 P = prolongation_matrix(reslayer_size, no_reslayers,dim_in, dim_out, sparse=False)
-print('size of prolongation matrix',P.size())
+#print('size of prolongation matrix',P.size())
 
 def restriction_matrix( reslayer_size, no_reslayers,dim_in,dim_out, sparse=True):
     P = prolongation_matrix(reslayer_size,no_reslayers,dim_in,dim_out,sparse=False)
@@ -170,7 +178,7 @@ def restriction_matrix( reslayer_size, no_reslayers,dim_in,dim_out, sparse=True)
     return Q
 
 Q = restriction_matrix(reslayer_size, no_reslayers,dim_in, dim_out, sparse=True)
-print('size of restriction matrix',Q.size())
+#print('size of restriction matrix',Q.size())
 
 
 #ResBlock2 is a residual block with one weights and one bias
