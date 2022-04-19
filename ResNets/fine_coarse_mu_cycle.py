@@ -6,14 +6,16 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
-from Nets import ResBlock1, ResNet1_fine, ResNet1_coarse, restriction_matrix, prolongation_matrix, prolongation, restriction
+from Nets import ResBlock1, ResNet1_fine2, ResNet1_fine, ResNet1_coarse, restriction_matrix, prolongation_matrix, prolongation, restriction
 
 dim_in = 28*28
 dim_out = 10
 reslayer_size = 100
+no_reslayers_fine2 = 5
 no_reslayers_fine = 3
-no_reslayers = int((no_reslayers_fine+1)/2)
+no_reslayers = int((no_reslayers_fine+1)/2) # coarse
 
+resnet_fine2 = ResNet1_fine2(dim_in, reslayer_size, dim_out, ResBlock1, h=0.25)
 resnet_fine = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5)
 resnet_coarse = ResNet1_coarse(dim_in,reslayer_size,dim_out,ResBlock1,h=1)
 
@@ -50,6 +52,7 @@ test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
 
 model = resnet_fine
+model_fine2 = resnet_fine2
 model_fine = resnet_fine
 model_coarse = resnet_coarse
 
@@ -194,7 +197,7 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             #loss = loss_fn_fine.item()
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             print('iteration no. ', batch*len(X))
-            print('loss',loss_fine)
+            print('loss',loss_fine.item())
             tic2 = time.perf_counter()
             print('needed time for this batch: ', tic2 - toc2)
     tic = time.perf_counter()
@@ -255,7 +258,9 @@ epochs = 5 #2#5
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train_classical(train_dataloader, model, loss_fn, optimizer_fine)
+    #train_classical(train_dataloader, model_fine2, loss_fn_fine, optimizer_fine)
     test(test_dataloader, model, loss_fn)
+    #test(test_dataloader, model_fine2, loss_fn_fine)
 tic = time.perf_counter()
 print('Needed time for the whole classical training: ', tic-toc)
 #print('Now we look at state_dict.')
@@ -283,11 +288,15 @@ print('Now 2-level-training!')
 toc = time.perf_counter()
 lr = 1e-3
 no_reslayers_coarse=2
+#no_reslayers_fine = 3
 epochs = 2
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse)
-    test(test_dataloader, model_fine, loss_fn)
+    #train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine,
+    #             optimizer_coarse, lr, no_reslayers_fine)
+    test(test_dataloader, model_fine, loss_fn_fine)
+    #test(test_dataloader, model_fine2, loss_fn_fine)
 tic = time.perf_counter()
 print('Needed time for the whole 2-level training: ', tic-toc)
 print("Done!")

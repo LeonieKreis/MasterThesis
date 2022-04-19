@@ -95,6 +95,35 @@ class ResNet1_fine(nn.Module):
 
         return input
 
+class ResNet1_fine2(nn.Module):
+    def __init__(self, in_channels,reslayer_size, out_channels, resblock, h=1):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        # we use h
+        self.layer0 = nn.Linear(in_channels, reslayer_size, bias= False)
+        self.layer1 = resblock(reslayer_size, reslayer_size, h)
+        self.layer2 = resblock(reslayer_size, reslayer_size, h)  #new layer
+        self.layer3 = resblock(reslayer_size, reslayer_size, h)
+        self.layer4 = resblock(reslayer_size, reslayer_size, h)  #new layer
+        self.layer5 = resblock(reslayer_size, reslayer_size, h)
+        self.layer6 = nn.Linear(reslayer_size, out_channels, bias=False)
+
+
+
+    def forward(self, input):
+        input = self.flatten(input)
+        input = self.layer0(input)
+        input = self.layer1(input)
+        input = self.layer2(input)
+        input = self.layer3(input)
+        input = self.layer4(input)
+        input = self.layer5(input)
+        input = self.layer6(input)
+
+        return input
+
+
+
 
 def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers_coarse, dim_in, dim_out): # from coarse to fine grid
     # the discretization correction of the W_2 is not implemented yet
