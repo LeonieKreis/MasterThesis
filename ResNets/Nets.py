@@ -108,6 +108,19 @@ def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers, dim_in, dim
     t = torch.cat((t,Q2flat))
     return t
 
+def restriction(flat_parameter_tensor, reslayer_size, no_reslayers, dim_in, dim_out):
+    dim_resblock = 2 * reslayer_size * reslayer_size + reslayer_size
+    no_reslayers_coarse = int((no_reslayers + 1)/2)
+    Q1flat, Res_fine_flat, Q2flat = torch.split(flat_parameter_tensor,
+                                                  [dim_in * reslayer_size, no_reslayers * dim_resblock,
+                                                   reslayer_size * dim_out])
+    t = torch.cat((Q1flat,Res_coarse_flat[0:dim_resblock]))
+    for i in range(no_reslayers):
+
+    #todo
+    t = torch.cat((t,Q2flat))
+    return t
+
 
 dim_in = 28*28
 dim_out = 10

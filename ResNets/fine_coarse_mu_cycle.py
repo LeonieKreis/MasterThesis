@@ -10,7 +10,7 @@ from Nets import ResBlock1, ResNet1_fine, ResNet1_coarse, restriction_matrix, pr
 
 dim_in = 28*28
 dim_out = 10
-reslayer_size = 10
+reslayer_size = 20
 no_reslayers_fine = 3
 no_reslayers = int((no_reslayers_fine+1)/2)
 
@@ -82,11 +82,11 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         for i in range(N1):
             # Compute prediction error
             pred = model_coarse(X)
-            loss = loss_fn_coarse(pred, y)
+            loss_coarse = loss_fn_coarse(pred, y)
 
             # Backpropagation
             optimizer_coarse.zero_grad()
-            loss.backward()
+            loss_coarse.backward()
             optimizer_coarse.step()
 
         ## prolongate to fine grid
@@ -99,11 +99,11 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         for i in range(N2):
             # Compute prediction error
             pred = model_fine(X)
-            loss = loss_fn_fine(pred, y)
+            loss_fine = loss_fn_fine(pred, y)
 
             # Backpropagation
             optimizer_fine.zero_grad()
-            loss.backward()
+            loss_fine.backward()
             optimizer_fine.step()
         x1 = torch.nn.utils.parameters_to_vector(model_fine.parameters())
 
@@ -168,11 +168,11 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         for i in range(N4):
             # Compute prediction error
             pred = model_fine(X)
-            loss = loss_fn_fine(pred, y)
+            loss_fine = loss_fn_fine(pred, y)
 
             # Backpropagation
             optimizer_fine.zero_grad()
-            loss.backward()
+            loss_fine.backward()
             optimizer_fine.step()
 
         if batch % 100 == 0:
@@ -180,7 +180,7 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             #loss = loss_fn_fine.item()
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             print('iteration no. ', batch*len(X))
-            print('loss',loss)
+            print('loss',loss_fine)
             tic2 = time.perf_counter()
             print('needed time for this batch: ', tic2 - toc2)
     tic = time.perf_counter()
