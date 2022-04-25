@@ -10,7 +10,7 @@ from Nets import ResBlock1, ResNet1_fine2, ResNet1_fine, ResNet1_coarse, restric
 
 dim_in = 28*28
 dim_out = 10
-reslayer_size = 100
+reslayer_size = 500#100
 no_reslayers_fine2 = 5
 no_reslayers_fine = 3
 no_reslayers = int((no_reslayers_fine+1)/2) # coarse
@@ -37,8 +37,8 @@ test_data = datasets.MNIST(
     transform=ToTensor(),
 )
 
-#define batschsize for minibatch-SGD
-batch_size = 30 #60
+#define batchsize for minibatch-SGD
+batch_size = 70#30 #60
 
 # Create data loaders.
 train_dataloader = DataLoader(training_data, batch_size=batch_size)
@@ -251,15 +251,16 @@ def test(dataloader, model, loss_fn):
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    return correct
 
 print('First classical training!')
 toc = time.perf_counter()
-epochs = 5 #2#5
+epochs = 1 #2#5
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train_classical(train_dataloader, model, loss_fn, optimizer_fine)
     #train_classical(train_dataloader, model_fine2, loss_fn_fine, optimizer_fine)
-    test(test_dataloader, model, loss_fn)
+    correct = test(test_dataloader, model, loss_fn)
     #test(test_dataloader, model_fine2, loss_fn_fine)
 tic = time.perf_counter()
 print('Needed time for the whole classical training: ', tic-toc)
@@ -288,15 +289,73 @@ print('Now 2-level-training!')
 toc = time.perf_counter()
 lr = 1e-3
 no_reslayers_coarse=2
-#no_reslayers_fine = 3
-epochs = 2
+no_reslayers_fine = 3
+epochs = 1
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse)
     #train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine,
     #             optimizer_coarse, lr, no_reslayers_fine)
-    test(test_dataloader, model_fine, loss_fn_fine)
+    correct = test(test_dataloader, model_fine, loss_fn_fine)
     #test(test_dataloader, model_fine2, loss_fn_fine)
 tic = time.perf_counter()
 print('Needed time for the whole 2-level training: ', tic-toc)
 print("Done!")
+
+
+
+
+## Now we train systematically with different batchsizes (all other hyperparameters are fixed)
+## we write the results in a .txt file
+
+
+with open("mytest_bs.txt", "w") as file1:
+    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes:")
+    file1.write("lr = "+str(lr)+" and reslayersize = "+str(reslayer_size))
+    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.")
+bs_list = [50,60]
+for bs in bs_list:
+    train_dataloader = DataLoader(training_data, batch_size=batch_size)
+    test_dataloader = DataLoader(test_data, batch_size=batch_size)
+    #classical training
+    toc = time.perf_counter()
+    epochs = 5  # 2#5
+    for t in range(epochs):
+        #print(f"Epoch {t + 1}\n-------------------------------")
+        train_classical(train_dataloader, model, loss_fn, optimizer_fine)
+        # train_classical(train_dataloader, model_fine2, loss_fn_fine, optimizer_fine)
+        correct = test(test_dataloader, model, loss_fn)
+        # test(test_dataloader, model_fine2, loss_fn_fine)
+    tic = time.perf_counter()
+    text = 'Needed time for the whole classical training: '+str(tic - toc)+"\n"
+    # Writing to file
+    with open("mytest_bs.txt", "a") as file1:
+        # Writing data to a file
+        file1.write(str(bs)+"\n")
+        file1.write("Classical training: ")
+        file1.write(text)
+        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n")
+
+    # 2-level training:
+    toc = time.perf_counter()
+    lr = 1e-3
+    no_reslayers_coarse = 2
+    # no_reslayers_fine = 3
+    epochs = 2
+    for t in range(epochs):
+        #print(f"Epoch {t + 1}\n-------------------------------")
+        train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine,
+                     optimizer_coarse, lr, no_reslayers_coarse)
+        # train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine,
+        #             optimizer_coarse, lr, no_reslayers_fine)
+        correct = test(test_dataloader, model_fine, loss_fn_fine)
+        # test(test_dataloader, model_fine2, loss_fn_fine)
+    tic = time.perf_counter()
+    text2 = 'Needed time for the whole 2-level training: '+str(tic - toc)+"\n"
+    # Writing to file
+    with open("mytest_bs.txt", "a") as file1:
+        # Writing data to a file
+        file1.write("Batch size: "+str(bs) + "\n")
+        file1.write("2-level training: ")
+        file1.write(text2)
+        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n")

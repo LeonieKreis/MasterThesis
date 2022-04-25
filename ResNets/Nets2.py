@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import torch
 from torch import nn
 
 from Nets import ResBlock1
@@ -33,7 +34,7 @@ def make_resnet(dims: list,ResBlock, no_reslayers,h=1 ,act_fun = "ReLU"):
     return nn.Sequential(layer_dict)
 
 model_res = make_resnet([28*28,100,10], ResBlock1, no_reslayers=5,h=0.25)
-print(model_res)
+#print(model_res)
 
 def gen_hierarch_models(no_levels,coarse_no_reslayers,dims,ResBlock, act_fun="ReLU"):
     no_reslayers = coarse_no_reslayers # we start to build the coarsest net first
@@ -46,7 +47,8 @@ def gen_hierarch_models(no_levels,coarse_no_reslayers,dims,ResBlock, act_fun="Re
         no_reslayers = 2*no_reslayers-1
         h = 0.5*h
 
-    return "Models of all levels are saved in directory 'nets'!"
+    return print("Models of all levels are saved in directory 'nets'!")
 
 
 
+gen_hierarch_models(3,2,[28*28,100,10],ResBlock1)

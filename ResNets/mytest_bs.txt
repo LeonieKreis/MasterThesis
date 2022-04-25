@@ -1,0 +1,2 @@
+60
+2-level training: Needed time for the whole classical training: 91.27965869999997Accuracy: 89.9%
