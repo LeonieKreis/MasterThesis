@@ -38,7 +38,7 @@ test_data = datasets.MNIST(
 )
 
 #define batschsize for minibatch-SGD
-batch_size = 60
+batch_size = 30 #60
 
 # Create data loaders.
 train_dataloader = DataLoader(training_data, batch_size=batch_size)

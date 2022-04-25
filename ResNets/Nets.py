@@ -126,7 +126,6 @@ class ResNet1_fine2(nn.Module):
 
 
 def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers_coarse, dim_in, dim_out): # from coarse to fine grid
-    # the discretization correction of the W_2 is not implemented yet
     # w_2finee = 2*w_2coarse
     dim_resblock = 2*reslayer_size*reslayer_size+reslayer_size
     no_reslayers_fine = 2*no_reslayers_coarse -1
@@ -136,11 +135,16 @@ def prolongation(flat_parameter_tensor, reslayer_size, no_reslayers_coarse, dim_
     for i in range(1,no_reslayers_coarse):
         t = torch.cat((t,torch.zeros(dim_resblock)))
         t2 = Res_coarse_flat[i*dim_resblock:(i+1)*dim_resblock]
-        t = torch.cat((t,t2))
+        # do correction of W2's
+        t2_1 = t2[0:reslayer_size+reslayer_size*reslayer_size]
+        t2_2 = t2[reslayer_size+reslayer_size*reslayer_size:]
+        t2_2sc = torch.mul(t2_2,2)
+        t = torch.cat((t,t2_1))
+        t = torch.cat((t,t2_2sc))
     t = torch.cat((t,Q2flat))
     return t
 
-def restriction(flat_parameter_tensor, reslayer_size, no_reslayers_fine, dim_in, dim_out): # the discretization correction of the W_2 is not implemented yet
+def restriction(flat_parameter_tensor, reslayer_size, no_reslayers_fine, dim_in, dim_out):
     #w_2coarse = 0.5*w_2fine
     # in each resblock, the last reslayer_size^2 parameters must be corrected with multiplicative factor 0.5
     dim_resblock = 2 * reslayer_size * reslayer_size + reslayer_size
@@ -152,7 +156,12 @@ def restriction(flat_parameter_tensor, reslayer_size, no_reslayers_fine, dim_in,
     for i in range(1,no_reslayers_fine):
         if i%2 ==0: #i even
             t2 = Res_fine_flat[i*dim_resblock:(i+1)*dim_resblock]
-            t = torch.cat((t,t2))
+            # do correction of W2's
+            t2_1 = t2[0:reslayer_size + reslayer_size * reslayer_size]
+            t2_2 = t2[reslayer_size + reslayer_size * reslayer_size:]
+            t2_2sc = torch.mul(t2_2, 0.5)
+            t = torch.cat((t, t2_1))
+            t = torch.cat((t, t2_2sc))
         #else: # i uneven
             #do nothing, these resblocks will be cut out
     t = torch.cat((t,Q2flat))
