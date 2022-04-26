@@ -56,14 +56,42 @@ def gen_hierarch_models(no_levels,coarse_no_reslayers,dims,ResBlock, act_fun="Re
     return model_list
 
 model_list = gen_hierarch_models(3,2,[28*28,100,10],ResBlock1)
-print(model_list)
+#print(model_list)
 
 def get_no_of_finer_reslayers(no_res_coarse):
     return int(2*no_res_coarse-1)
 
-'''def train_multilevelV(dataloader,loss_fn, optimizer, lr, iteration_numbers,no_levels,coarse_no_reslayers,dims,ResBlock,act_fun="ReLU", Print=False):
+def train_multilevelV(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_levels,coarse_no_reslayers,dims,ResBlock,act_fun="ReLU", Print=False):
     toc = time.perf_counter()
+    def nested_iteration(no_iteration, model_coarse, model_fine, loss_fn_coarse,optimizer_coarse):
+        # Nested iteration (N1=no_iteration)
+        ## iterate N1 times on coarse grid
+        for i in range(no_iteration):
+            # Compute prediction error
+            pred = model_coarse(X)
+            loss_coarse = loss_fn(pred, y)
+            # Backpropagation
+            optimizer.zero_grad()
+            loss_coarse.backward()
+            optimizer.step()
+
+        ## prolongate to fine grid
+        vec_coarse = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
+        vec_fine = prolongation(vec_coarse, reslayer_size, no_reslayers_coarse, dim_in, dim_out)
+        torch.nn.utils.vector_to_parameters(vec_fine, model_fine.parameters())
+        #return vec_fine
+
+    def Vcycle(depth,needed_itnumbers,models, optimizers, loss_fns):
+        #downwards
+
+        #at bottom
+
+        #upwards
+
+        return 'bla'
+
     model_list = gen_hierarch_models(no_levels, coarse_no_reslayers, dims, ResBlock, act_fun)
+    # wir brauchen auch vermutlich eine list von optimierern und loss functions for each level
     size = len(dataloader.dataset)
     for i in range(no_levels):
         #PATH = "nets/model_atlevel_"+str(k)+".pt"
@@ -78,10 +106,10 @@ def get_no_of_finer_reslayers(no_res_coarse):
 
         # for schleife für levels
         for i in range(no_levels -1):
-        
-        #nested iteration (indep of i)
-        #v-cycle (with variying depth)
-
+            # nested iteration
+            nested_iteration(no_iteration[0],model_list[i],model_list[i+1],loss_fns[i],optimizers[i])
+            #v-cycle (with variying depth)
+            #Vcycle(i+1,todo,model_list[0:i+2], optimizers[0:i+2], loss_fns[0:i+2])
 
         if batch % 100 == 0:
             current = batch*len(X)
@@ -89,12 +117,12 @@ def get_no_of_finer_reslayers(no_res_coarse):
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             if Print:
                 print('iteration no. ', batch*len(X))
-                print('loss',loss_fine.item())
+                print('loss',loss_fine.item())   #todo
             tic2 = time.perf_counter()
             if Print:
                 print('needed time for this batch: ', tic2 - toc2)
     tic = time.perf_counter()
     if Print:
-        print('needed time for one epoch: ', tic-toc) '''
+        print('needed time for one epoch: ', tic-toc)
 
 

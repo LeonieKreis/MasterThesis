@@ -20,6 +20,7 @@ resnet_fine = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5)
 resnet_coarse = ResNet1_coarse(dim_in,reslayer_size,dim_out,ResBlock1,h=1)
 
 device = 'cpu'
+torch.set_num_threads(4) # uses 4 kernels (i have 8?)
 
 # Download training data from open datasets.
 training_data = datasets.MNIST(
@@ -317,10 +318,10 @@ print("Done!")
 
 
 with open("mytest_bs.txt", "w") as file1:
-    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes:")
-    file1.write("lr = "+str(lr)+" and reslayersize = "+str(reslayer_size))
-    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.")
-bs_list = [10,20,30,40,50,60]
+    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes:\n")
+    file1.write("lr = "+str(lr)+" and reslayersize = "+str(reslayer_size)+"\n")
+    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.\n")
+bs_list = [10,20,30,40,50,60,70,80,90,100]
 for bs in bs_list:
     train_dataloader = DataLoader(training_data, batch_size=bs)
     test_dataloader = DataLoader(test_data, batch_size=bs)
@@ -375,10 +376,10 @@ for bs in bs_list:
 
 bs = 40
 with open("mytest_lr.txt", "w") as file1:
-    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes:")
-    file1.write("bs = "+str(bs)+" and reslayersize = "+str(reslayer_size))
-    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.")
-lr_list = [1e-4,1e-3,1e-2]
+    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes:\n")
+    file1.write("bs = "+str(bs)+" and reslayersize = "+str(reslayer_size)+"\n")
+    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.\n")
+lr_list = [1e-4,1e-3,5e-3,1e-2,2e-2,5e-2,1e-1]
 for lr in lr_list:
     train_dataloader = DataLoader(training_data, batch_size=bs)
     test_dataloader = DataLoader(test_data, batch_size=bs)
@@ -431,12 +432,12 @@ for lr in lr_list:
 ## Now we train systematically with different reslayer widths (all other hyperparameters are fixed)
 ## we write the results in a .txt file
 
-lr = 1e-3
+lr = 1e-2
 with open("mytest_rw.txt", "w") as file1:
-    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes and variable width of the reslayers:")
-    file1.write("bs = "+str(bs)+" and lr = "+str(lr))
-    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.")
-rw_list = [10,50,100,200,500,700]
+    file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes and variable width of the reslayers:\n")
+    file1.write("bs = "+str(bs)+" and lr = "+str(lr)+"\n")
+    file1.write("classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.\n")
+rw_list = [10,50,100,200,500,700,1000,2000]
 for rw in rw_list:
     resnet_fine = ResNet1_fine(dim_in, rw, dim_out, ResBlock1, h=0.5)
     resnet_coarse = ResNet1_coarse(dim_in, rw, dim_out, ResBlock1, h=1)
