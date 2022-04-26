@@ -1,8 +1,11 @@
+import time
 from collections import OrderedDict
 import torch
 from torch import nn
 
 from Nets import ResBlock1
+
+device = 'cpu'
 
 def make_net_linear(dims: list):
     layer_dict = OrderedDict()
@@ -14,7 +17,7 @@ def make_net_linear(dims: list):
 model = make_net_linear([28*28,100,100,10])
 #print(model)
 
-def make_resnet(dims: list,ResBlock, no_reslayers,h=1 ,act_fun = "ReLU"):
+def make_resnet(dims: list,ResBlock, no_reslayers,h=1. ,act_fun = "ReLU"):
     if act_fun == "ReLU":
         AF = nn.ReLU()
     if act_fun == "Tanh":
@@ -39,16 +42,59 @@ model_res = make_resnet([28*28,100,10], ResBlock1, no_reslayers=5,h=0.25)
 def gen_hierarch_models(no_levels,coarse_no_reslayers,dims,ResBlock, act_fun="ReLU"):
     no_reslayers = coarse_no_reslayers # we start to build the coarsest net first
     h = 1
+    model_list = []
     for k in range(no_levels):
         model = make_resnet(dims,ResBlock,no_reslayers,h=h,act_fun=act_fun)
+        # write model in list
+        model_list.append(model)
         #save model
         PATH = "nets/model_atlevel_"+str(k)+".pt"
         torch.save(model.state_dict(),PATH)
         no_reslayers = 2*no_reslayers-1
         h = 0.5*h
+    print("Models of all levels are also saved in directory 'nets'!")
+    return model_list
 
-    return print("Models of all levels are saved in directory 'nets'!")
+model_list = gen_hierarch_models(3,2,[28*28,100,10],ResBlock1)
+print(model_list)
+
+def get_no_of_finer_reslayers(no_res_coarse):
+    return int(2*no_res_coarse-1)
+
+'''def train_multilevelV(dataloader,loss_fn, optimizer, lr, iteration_numbers,no_levels,coarse_no_reslayers,dims,ResBlock,act_fun="ReLU", Print=False):
+    toc = time.perf_counter()
+    model_list = gen_hierarch_models(no_levels, coarse_no_reslayers, dims, ResBlock, act_fun)
+    size = len(dataloader.dataset)
+    for i in range(no_levels):
+        #PATH = "nets/model_atlevel_"+str(k)+".pt"
+        #model.load_state_dict(torch.load(PATH))
+        #model = model_list[i]
+        model_list[i].train()
+    #models.train
+    for batch, (X,y) in enumerate(dataloader):
+        if batch%100 == 0:
+            toc2 = time.perf_counter()
+        X,y = X.to(device),y.to(device)
+
+        # for schleife für levels
+        for i in range(no_levels -1):
+        
+        #nested iteration (indep of i)
+        #v-cycle (with variying depth)
 
 
+        if batch % 100 == 0:
+            current = batch*len(X)
+            #loss = loss_fn_fine.item()
+            #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+            if Print:
+                print('iteration no. ', batch*len(X))
+                print('loss',loss_fine.item())
+            tic2 = time.perf_counter()
+            if Print:
+                print('needed time for this batch: ', tic2 - toc2)
+    tic = time.perf_counter()
+    if Print:
+        print('needed time for one epoch: ', tic-toc) '''
 
-gen_hierarch_models(3,2,[28*28,100,10],ResBlock1)
+
