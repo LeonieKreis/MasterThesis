@@ -59,10 +59,11 @@ model_coarse = resnet_coarse
 
 loss_fn = nn.CrossEntropyLoss()
 loss_fn_fine = loss_fn
+loss_fn_fine2 = loss_fn
 loss_fn_coarse = nn.CrossEntropyLoss() # the modified loss fun for multilevel will be defined during training!
 # #this loss function is needed for the gradients!
 
-
+optimizer_fine2 = torch.optim.SGD(model_fine2.parameters(), lr=1e-3)
 optimizer_fine = torch.optim.SGD(model_fine.parameters(), lr=1e-3)
 optimizer_coarse = torch.optim.SGD(model_coarse.parameters(), lr=1e-3)
 
@@ -263,13 +264,13 @@ def test(dataloader, model, loss_fn, Print = False):
 
 print('First classical training!')
 toc = time.perf_counter()
-epochs = 1 #2#5
+epochs = 6 #2#5
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    train_classical(train_dataloader, model, loss_fn, optimizer_fine,Print=True)
-    #train_classical(train_dataloader, model_fine2, loss_fn_fine, optimizer_fine, print=True)
-    correct = test(test_dataloader, model, loss_fn, Print=True)
-    #test(test_dataloader, model_fine2, loss_fn_fine, print=True)
+    #train_classical(train_dataloader, model, loss_fn, optimizer_fine,Print=True)
+    train_classical(train_dataloader, model_fine2, loss_fn_fine, optimizer_fine2, Print=True)
+    #correct = test(test_dataloader, model, loss_fn, Print=True)
+    correct = test(test_dataloader, model_fine2, loss_fn_fine, Print=True)
 tic = time.perf_counter()
 print('Needed time for the whole classical training: ', tic-toc)
 #print('Now we look at state_dict.')
@@ -298,21 +299,21 @@ toc = time.perf_counter()
 lr = 1e-3
 no_reslayers_coarse=2
 no_reslayers_fine = 3
-epochs = 1
+epochs = 3
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse, Print=True)
-    #train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine,
-    #             optimizer_coarse, lr, no_reslayers_fine, print=True)
-    correct = test(test_dataloader, model_fine, loss_fn_fine, Print=True)
-    #test(test_dataloader, model_fine2, loss_fn_fine, print=True)
+    #train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse, Print=True)
+    train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine2,
+                 optimizer_fine, lr, no_reslayers_fine, Print=True)
+    #correct = test(test_dataloader, model_fine, loss_fn_fine, Print=True)
+    correct = test(test_dataloader, model_fine2, loss_fn_fine, Print=True)
 tic = time.perf_counter()
 print('Needed time for the whole 2-level training: ', tic-toc)
 print("Done!")
 
 
 
-
+'''
 ## Now we train systematically with different batchsizes (all other hyperparameters are fixed)
 ## we write the results in a .txt file
 
@@ -484,4 +485,4 @@ for rw in rw_list:
         file1.write("width of reslayers: "+str(rw) + "\n")
         file1.write("2-level training: ")
         file1.write(text2)
-        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n")
+        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n") '''
