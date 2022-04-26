@@ -1,36 +1,51 @@
-Training the Net on MNIST data set, with res net with 3 reslayers (on fine level) for different batchsizes and variable width of the reslayers:bs = 40 and lr = 0.001classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.width of reslayers: 10
-Classical training: Needed time for the whole classical training: 97.50490430000013
-Accuracy: 96.6% 
+Training the Net on MNIST data set, with res net with 3 reslayers (on fine level) for different batchsizes and variable width of the reslayers:
+bs = 40 and lr = 0.01
+classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.
 width of reslayers: 10
-2-level training: Needed time for the whole 2-level training: 89.01448449999998
-Accuracy: 95.5% 
+Classical training: Needed time for the whole classical training: 36.45095730000003
+Accuracy: 97.5% 
+width of reslayers: 10
+2-level training: Needed time for the whole 2-level training: 35.817534300000034
+Accuracy: 95.3% 
 width of reslayers: 50
-Classical training: Needed time for the whole classical training: 98.12190509999982
-Accuracy: 96.9% 
+Classical training: Needed time for the whole classical training: 36.37114220000012
+Accuracy: 97.9% 
 width of reslayers: 50
-2-level training: Needed time for the whole 2-level training: 85.45768550000003
-Accuracy: 96.1% 
+2-level training: Needed time for the whole 2-level training: 35.82264689999988
+Accuracy: 94.9% 
 width of reslayers: 100
-Classical training: Needed time for the whole classical training: 93.48377019999998
-Accuracy: 97.0% 
+Classical training: Needed time for the whole classical training: 36.24762919999989
+Accuracy: 97.8% 
 width of reslayers: 100
-2-level training: Needed time for the whole 2-level training: 87.89572289999978
-Accuracy: 96.2% 
+2-level training: Needed time for the whole 2-level training: 36.09839740000007
+Accuracy: 95.7% 
 width of reslayers: 200
-Classical training: Needed time for the whole classical training: 91.68503340000007
-Accuracy: 97.1% 
+Classical training: Needed time for the whole classical training: 36.305719199999885
+Accuracy: 97.7% 
 width of reslayers: 200
-2-level training: Needed time for the whole 2-level training: 85.7870955000003
-Accuracy: 96.3% 
+2-level training: Needed time for the whole 2-level training: 36.58934919999979
+Accuracy: 95.2% 
 width of reslayers: 500
-Classical training: Needed time for the whole classical training: 94.17963599999985
-Accuracy: 97.2% 
+Classical training: Needed time for the whole classical training: 36.347137400000065
+Accuracy: 98.0% 
 width of reslayers: 500
-2-level training: Needed time for the whole 2-level training: 89.93230959999983
-Accuracy: 96.5% 
+2-level training: Needed time for the whole 2-level training: 36.1498102999999
+Accuracy: 94.8% 
 width of reslayers: 700
-Classical training: Needed time for the whole classical training: 103.80982589999985
-Accuracy: 97.3% 
+Classical training: Needed time for the whole classical training: 36.198155900000074
+Accuracy: 98.0% 
 width of reslayers: 700
-2-level training: Needed time for the whole 2-level training: 65.75312570000006
-Accuracy: 96.5% 
+2-level training: Needed time for the whole 2-level training: 36.05652020000002
+Accuracy: 94.6% 
+width of reslayers: 1000
+Classical training: Needed time for the whole classical training: 36.14319179999984
+Accuracy: 98.0% 
+width of reslayers: 1000
+2-level training: Needed time for the whole 2-level training: 2640.0387308000004
+Accuracy: 95.4% 
+width of reslayers: 2000
+Classical training: Needed time for the whole classical training: 37.66448669999954
+Accuracy: 97.9% 
+width of reslayers: 2000
+2-level training: Needed time for the whole 2-level training: 36.327209799999764
+Accuracy: 95.4% 

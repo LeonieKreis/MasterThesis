@@ -1,18 +1,45 @@
-Training the Net on MNIST data set, with res net with 3 reslayers (on fine level) for different batchsizes:bs = 40 and reslayersize = 100classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.learning rate: 0.0001
-Classical training: Needed time for the whole classical training: 93.96458959999995
-Accuracy: 94.7% 
-Learning rate: 0.0001
-2-level training: Needed time for the whole 2-level training: 95.08052339999995
-Accuracy: 94.3% 
-learning rate: 0.001
-Classical training: Needed time for the whole classical training: 102.48812150000003
+Training the Net on MNIST data set, with res net with 3 reslayers (on fine level) for different batchsizes:
+bs = 40 and reslayersize = 100
+classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.
+learning rate: 0.0001
+Classical training: Needed time for the whole classical training: 36.65459920000001
 Accuracy: 95.1% 
+Learning rate: 0.0001
+2-level training: Needed time for the whole 2-level training: 36.14544169999999
+Accuracy: 94.7% 
+learning rate: 0.001
+Classical training: Needed time for the whole classical training: 36.534752000000026
+Accuracy: 95.3% 
 Learning rate: 0.001
-2-level training: Needed time for the whole 2-level training: 93.15540469999996
-Accuracy: 94.5% 
-learning rate: 0.01
-Classical training: Needed time for the whole classical training: 95.57392730000015
+2-level training: Needed time for the whole 2-level training: 36.86013090000006
+Accuracy: 94.8% 
+learning rate: 0.005
+Classical training: Needed time for the whole classical training: 36.60448440000005
 Accuracy: 96.0% 
-Learning rate: 0.01
-2-level training: Needed time for the whole 2-level training: 87.84255800000005
+Learning rate: 0.005
+2-level training: Needed time for the whole 2-level training: 36.280990400000064
 Accuracy: 95.2% 
+learning rate: 0.01
+Classical training: Needed time for the whole classical training: 36.89274269999987
+Accuracy: 96.6% 
+Learning rate: 0.01
+2-level training: Needed time for the whole 2-level training: 36.22375540000007
+Accuracy: 95.6% 
+learning rate: 0.02
+Classical training: Needed time for the whole classical training: 36.65694880000001
+Accuracy: 96.8% 
+Learning rate: 0.02
+2-level training: Needed time for the whole 2-level training: 36.027049799999986
+Accuracy: 95.8% 
+learning rate: 0.05
+Classical training: Needed time for the whole classical training: 36.52831679999986
+Accuracy: 96.5% 
+Learning rate: 0.05
+2-level training: Needed time for the whole 2-level training: 36.10294510000017
+Accuracy: 95.0% 
+learning rate: 0.1
+Classical training: Needed time for the whole classical training: 36.4870827000002
+Accuracy: 97.1% 
+Learning rate: 0.1
+2-level training: Needed time for the whole 2-level training: 35.77890049999996
+Accuracy: 95.4% 

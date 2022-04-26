@@ -1,36 +1,63 @@
-Training the Net on MNIST data set, with res net with 3 reslayers (on fine level) for different batchsizes:lr = 0.001 and reslayersize = 100classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.Batch size: 10
-Classical training: Needed time for the whole classical training: 160.3338425
-Accuracy: 92.6% 
+Training the Net on MNIST data set, with res net with 3 reslayers (on fine level) for different batchsizes:
+lr = 0.001 and reslayersize = 100
+classical training runs 5 epochs, 2-level training runs 2 epochs. We measure the accuracy and the needed time.
 Batch size: 10
-2-level training: Needed time for the whole 2-level training: 225.0774966
-Accuracy: 92.0% 
+Classical training: Needed time for the whole classical training: 68.16548180000001
+Accuracy: 92.3% 
+Batch size: 10
+2-level training: Needed time for the whole 2-level training: 101.1284039
+Accuracy: 91.5% 
 Batch size: 20
-Classical training: Needed time for the whole classical training: 114.33083520000008
-Accuracy: 93.5% 
+Classical training: Needed time for the whole classical training: 46.51136059999999
+Accuracy: 93.2% 
 Batch size: 20
-2-level training: Needed time for the whole 2-level training: 132.16795580000007
-Accuracy: 93.0% 
+2-level training: Needed time for the whole 2-level training: 57.40130159999998
+Accuracy: 92.8% 
 Batch size: 30
-Classical training: Needed time for the whole classical training: 104.62795900000003
-Accuracy: 94.1% 
+Classical training: Needed time for the whole classical training: 40.07096720000004
+Accuracy: 93.8% 
 Batch size: 30
-2-level training: Needed time for the whole 2-level training: 103.41859639999996
-Accuracy: 93.7% 
+2-level training: Needed time for the whole 2-level training: 43.638987499999985
+Accuracy: 93.4% 
 Batch size: 40
-Classical training: Needed time for the whole classical training: 108.43772439999998
-Accuracy: 94.4% 
-Batch size: 40
-2-level training: Needed time for the whole 2-level training: 90.4542841
-Accuracy: 94.0% 
-Batch size: 50
-Classical training: Needed time for the whole classical training: 88.99816220000002
-Accuracy: 94.6% 
-Batch size: 50
-2-level training: Needed time for the whole 2-level training: 86.45155679999993
+Classical training: Needed time for the whole classical training: 36.65335159999995
 Accuracy: 94.2% 
+Batch size: 40
+2-level training: Needed time for the whole 2-level training: 36.084372599999995
+Accuracy: 93.7% 
+Batch size: 50
+Classical training: Needed time for the whole classical training: 34.71828670000002
+Accuracy: 94.4% 
+Batch size: 50
+2-level training: Needed time for the whole 2-level training: 32.23655609999997
+Accuracy: 94.1% 
 Batch size: 60
-Classical training: Needed time for the whole classical training: 90.14894509999999
-Accuracy: 94.9% 
+Classical training: Needed time for the whole classical training: 33.288657899999976
+Accuracy: 94.6% 
 Batch size: 60
-2-level training: Needed time for the whole 2-level training: 70.31312609999986
+2-level training: Needed time for the whole 2-level training: 29.308608700000036
+Accuracy: 94.2% 
+Batch size: 70
+Classical training: Needed time for the whole classical training: 32.45885309999994
+Accuracy: 94.7% 
+Batch size: 70
+2-level training: Needed time for the whole 2-level training: 27.348984900000005
 Accuracy: 94.3% 
+Batch size: 80
+Classical training: Needed time for the whole classical training: 31.410828299999935
+Accuracy: 94.9% 
+Batch size: 80
+2-level training: Needed time for the whole 2-level training: 25.504316400000107
+Accuracy: 94.5% 
+Batch size: 90
+Classical training: Needed time for the whole classical training: 30.86782190000008
+Accuracy: 95.0% 
+Batch size: 90
+2-level training: Needed time for the whole 2-level training: 24.593372599999952
+Accuracy: 94.6% 
+Batch size: 100
+Classical training: Needed time for the whole classical training: 30.051906499999973
+Accuracy: 95.0% 
+Batch size: 100
+2-level training: Needed time for the whole 2-level training: 23.299408900000003
+Accuracy: 94.7% 
