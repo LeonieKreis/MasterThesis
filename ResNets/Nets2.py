@@ -49,8 +49,15 @@ def gen_hierarch_models(no_levels,coarse_no_reslayers,dims,ResBlock, act_fun="Re
 model_list = gen_hierarch_models(3,2,[28*28,100,10],ResBlock1)
 #print(model_list)
 
-def get_no_of_finer_reslayers(no_res_coarse):
-    return int(2*no_res_coarse-1)
+def get_no_of_finer_reslayers(no_res_coarse,steps=1):
+    for i in range(steps):
+        no_res_coarse = int(2*no_res_coarse-1)
+    return no_res_coarse
+
+def get_no_of_coarser_reslayers(no_res_fine, steps=1):
+    for i in range(steps):
+        no_res_fine = (no_res_fine+1)/2
+    return int(no_res_fine)
 
 def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_levels,coarse_no_reslayers,dims,ResBlock,act_fun="ReLU", Print=False):
     toc = time.perf_counter()
@@ -64,11 +71,11 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
         for i in range(no_iteration):
             # Compute prediction error
             pred = model_coarse(X)
-            loss_coarse = loss_fn(pred, y)
+            loss_coarse = loss_fn_coarse(pred, y)
             # Backpropagation
-            optimizer.zero_grad()
+            optimizer_coarse.zero_grad()
             loss_coarse.backward()
-            optimizer.step()
+            optimizer_coarse.step()
 
         ## prolongate to fine grid
         vec_coarse = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
@@ -76,10 +83,12 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
         torch.nn.utils.vector_to_parameters(vec_fine, model_fine.parameters())
         #return vec_fine
 
-    def Vcycle(depth,needed_itnumbers,models, optimizers, loss_fns,dims):
+    def Vcycle(depth,needed_itnumbers,models, optimizers, loss_fns,dims, starting_no_reslayers):
         dim_in = dims[0]
         reslayer_size = dims[1]
         dim_out = dims[2]
+
+        no_reslayers_fine = starting_no_reslayers
         #models, optimizers and loss functions must go from coarse to fine!
         x1_list = [] # finest to coarstest level
         x1bar_list = []
@@ -98,7 +107,6 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             if l == 0:
                 loss_fn_fine = loss_fns[no_models-(l+1)]
 
-            #no_reslayers_fine = todo: use evtl get no of finer reslayer
 
             #0) iterate on fine level
             N2 = needed_itnumbers[0]
@@ -121,7 +129,7 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             g = torch.cat(g)
 
             #4) restrict gradient to coarse level
-            g2 = restriction(g, reslayer_size, no_reslayers_fine, dim_in, dim_out) # TODO needs additional input!
+            g2 = restriction(g, reslayer_size, no_reslayers_fine, dim_in, dim_out)
 
             #2) restrict parameters to coarse level
             vec_fine = torch.nn.utils.parameters_to_vector(model_fine.parameters())
@@ -146,6 +154,8 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
                 loss = torch.sub(loss_fn_coarse(pred, y), torch.dot(nu, paras_flat))
                 return loss
             loss_fn_fine=loss_fn_coarse_mod # new objective function for next step in loop
+
+            no_reslayers_fine = get_no_of_coarser_reslayers(no_reslayers_fine)
             #end for loop with l
 
         #at bottom
@@ -162,12 +172,11 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             optimizer_coarse.step()
 
         #upwards
+        no_reslayers_coarse = no_reslayers_fine
         for l in range(depth):
             model_coarse = models[l]
             model_fine = models[l+1]
             optimizer_fine = optimizers[l+1]
-
-            # no_reslayers_coarse = todo: use evtl get no of finer reslayer
 
             #8) compute prolongation of difference
             x2_bar = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
@@ -189,7 +198,7 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
                 optimizer_fine.zero_grad()
                 loss_fine.backward()
                 optimizer_fine.step()
-
+            no_reslayers_coarse = get_no_of_finer_reslayers(no_reslayers_coarse)
         #return 0
 
     model_list = gen_hierarch_models(no_levels, coarse_no_reslayers, dims, ResBlock, act_fun)
@@ -210,9 +219,10 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
         for i in range(no_levels -1):
             # nested iteration
             current_no_reslayers = coarse_no_reslayers
-            nested_iteration(iteration_numbers[0],current_no_reslayers,model_list[i],model_list[i+1],loss_fns[i],optimizers[i])
+            nested_iteration(iteration_numbers[0],current_no_reslayers,model_list[i],model_list[i+1],loss_fns[i],optimizers[i],dims)
             #v-cycle (with variying depth)
-            Vcycle(i+1,iteration_numbers[1:],model_list[0:i+2], optimizers[0:i+2], loss_fns[0:i+2],dims)
+            starting_no_reslayers = #todo
+            Vcycle(i+1,iteration_numbers[1:],model_list[0:i+2], optimizers[0:i+2], loss_fns[0:i+2],dims,starting_no_reslayers)
             coarse_no_reslayers = get_no_of_finer_reslayers(coarse_no_reslayers)
 
         if batch % 100 == 0:
