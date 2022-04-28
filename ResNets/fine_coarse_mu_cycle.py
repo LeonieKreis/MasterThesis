@@ -67,7 +67,7 @@ optimizer_fine2 = torch.optim.SGD(model_fine2.parameters(), lr=1e-3)
 optimizer_fine = torch.optim.SGD(model_fine.parameters(), lr=1e-3)
 optimizer_coarse = torch.optim.SGD(model_coarse.parameters(), lr=1e-3)
 
-N1, N2, N3, N4 = 1,1,10,1
+N1, N2, N3, N4 = 1,1,1,1
 
 ## 2-level nested iteration and mu-cycle
 def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr,no_reslayers_coarse, prolong_matrix = False, Print=False):
@@ -181,7 +181,10 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             # Compute prediction error
             pred = model_coarse(X)
             loss = loss_fn_coarse_mod(pred, y)
-            loss2 = loss_fn_coarse(pred,y)
+            if batch%100 == 0:
+                print('modified loss:', loss.item())
+                loss2 = loss_fn_coarse(pred,y)
+                print('CEloss: ',loss2.item())
 
             # Backpropagation
             optimizer_coarse.zero_grad()
@@ -333,7 +336,7 @@ print('Needed time for the whole classical training: ', tic-toc)
 ## multilevel training:
 print('Now 2-level-training!')
 toc = time.perf_counter()
-lr = 1e-3
+lr = 5e-2
 no_reslayers_coarse=2
 no_reslayers_fine = 3
 epochs = 1
