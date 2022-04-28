@@ -221,7 +221,7 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             current_no_reslayers = coarse_no_reslayers
             nested_iteration(iteration_numbers[0],current_no_reslayers,model_list[i],model_list[i+1],loss_fns[i],optimizers[i],dims)
             #v-cycle (with variying depth)
-            starting_no_reslayers = #todo
+            starting_no_reslayers = #todo: how do we compute that?
             Vcycle(i+1,iteration_numbers[1:],model_list[0:i+2], optimizers[0:i+2], loss_fns[0:i+2],dims,starting_no_reslayers)
             coarse_no_reslayers = get_no_of_finer_reslayers(coarse_no_reslayers)
 
@@ -231,7 +231,7 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             if Print:
                 print('iteration no. '+str(current)+'of'+str(size)) #batch*len(X))
-                print('loss',loss_fine.item())   #todo
+                print('loss',loss_fine.item())   #todo what is loss_fine?
             tic2 = time.perf_counter()
             if Print:
                 print('needed time for this batch: ', tic2 - toc2)

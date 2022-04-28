@@ -10,7 +10,7 @@ from Nets import ResBlock1, ResNet1_fine2, ResNet1_fine, ResNet1_coarse, restric
 
 dim_in = 28*28
 dim_out = 10
-reslayer_size = 100#100
+reslayer_size = 10 #100
 no_reslayers_fine2 = 5
 no_reslayers_fine = 3
 no_reslayers = int((no_reslayers_fine+1)/2) # coarse
@@ -67,7 +67,7 @@ optimizer_fine2 = torch.optim.SGD(model_fine2.parameters(), lr=1e-3)
 optimizer_fine = torch.optim.SGD(model_fine.parameters(), lr=1e-3)
 optimizer_coarse = torch.optim.SGD(model_coarse.parameters(), lr=1e-3)
 
-N1, N2, N3, N4 = 1,1,1,1
+N1, N2, N3, N4 = 1,1,10,1
 
 ## 2-level nested iteration and mu-cycle
 def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr,no_reslayers_coarse, prolong_matrix = False, Print=False):
@@ -84,6 +84,8 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             toc2 = time.perf_counter()
         X, y = X.to(device), y.to(device)
 
+        if batch%100 == 0:
+            test1 = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
         # Nested iteration (N1 iterations)
         ## iterate N1 times on coarse grid
         for i in range(N1):
@@ -96,6 +98,10 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             loss_coarse.backward()
             optimizer_coarse.step()
 
+        if batch%100 == 0:
+            test2 = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
+            if not torch.equal(test1,test2):
+                print('1) model parameters have changed while nested iteration!')
         ## prolongate to fine grid
         vec_coarse = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
         if prolong_matrix:
@@ -117,6 +123,11 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             optimizer_fine.step()
         x1 = torch.nn.utils.parameters_to_vector(model_fine.parameters())
 
+        # again testing if model_corase param have changed
+        if batch%100 == 0:
+            test3 = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
+            if torch.equal(test3,test2):
+                print('2) model parameters have not changed and shouldnt!')
         ###1) compute gradient on fine level #and restrict to coarse level
         g = []
         for param in model_fine.parameters():
@@ -135,8 +146,14 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             vec_coarse = torch.mv(restr, vec_fine)
         else:
             vec_coarse = restriction(vec_fine,reslayer_size, no_reslayers_fine, dim_in,dim_out)
-        x1_bar = vec_coarse
+        #x1_bar = vec_coarse
         torch.nn.utils.vector_to_parameters(vec_coarse, model_coarse.parameters())
+        x1_bar = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
+
+        if batch%100 == 0:
+            test4 = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
+            if not torch.equal(test3,test4):
+                print('3) model parameters have changed after restriction from fine level!')
 
         ###3) compute gradient of loss function on the coarse level
         g1 = []
@@ -164,11 +181,17 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             # Compute prediction error
             pred = model_coarse(X)
             loss = loss_fn_coarse_mod(pred, y)
+            loss2 = loss_fn_coarse(pred,y)
 
             # Backpropagation
             optimizer_coarse.zero_grad()
             loss.backward()
             optimizer_coarse.step()
+
+        if batch%100 == 0:
+            test5 = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
+            if not torch.equal(test5,test4):
+                print('4) model parameters have changed while iterating on bottom!')
 
         ### 8) compute prolongation of difference
         x2_bar = torch.nn.utils.parameters_to_vector(model_coarse.parameters())
@@ -178,6 +201,15 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
         else:
             e2 = prolongation(e2_bar,reslayer_size,no_reslayers_coarse,dim_in,dim_out)
 
+        #check whether e2 is a descent direction:
+        if batch%100 == 0:
+            #print('norm of gradient: ',torch.dot(g,g).item())
+            if torch.equal(x2_bar,x1_bar):
+                print('x1bar is x2bar!!')
+            print('norm of e2_bar: ',torch.dot(e2_bar,e2_bar).item())
+            print('norm of e2: ', torch.dot(e2, e2).item())
+            check = torch.dot(e2,g)
+            print('value of gradientf(x1)Te_2: ',check.item())
         ## 9) update fine weights (maybe with line search)
         ## for now, without line search
         x2 = torch.sub(x1,e2,alpha=-lr)
@@ -224,12 +256,17 @@ def train_classical(dataloader, model, loss_fn, optimizer, Print=False):
         # Compute prediction error
         pred = model(X)
         loss = loss_fn(pred, y)
-
+        x1_bar = torch.nn.utils.parameters_to_vector(model.parameters())
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        x2_bar = torch.nn.utils.parameters_to_vector(model.parameters())
+        #check whether the parameters have changed...
+        if batch%100 == 0:
+            if not torch.equal(x1_bar,x2_bar):
+                print('parameters of model have changed')
         if batch % 100 == 0:
             loss, current = loss.item(), batch * len(X)
             if Print:
@@ -264,7 +301,7 @@ def test(dataloader, model, loss_fn, Print = False):
 
 print('First classical training!')
 toc = time.perf_counter()
-epochs = 6 #2#5
+epochs = 1 #2#5
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     #train_classical(train_dataloader, model, loss_fn, optimizer_fine,Print=True)
@@ -299,14 +336,14 @@ toc = time.perf_counter()
 lr = 1e-3
 no_reslayers_coarse=2
 no_reslayers_fine = 3
-epochs = 3
+epochs = 1
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    #train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse, Print=True)
-    train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine2,
-                 optimizer_fine, lr, no_reslayers_fine, Print=True)
-    #correct = test(test_dataloader, model_fine, loss_fn_fine, Print=True)
-    correct = test(test_dataloader, model_fine2, loss_fn_fine, Print=True)
+    train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, no_reslayers_coarse, Print=True)
+    #train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine2,
+                 #optimizer_fine, lr, no_reslayers_fine, Print=True)
+    correct = test(test_dataloader, model_fine, loss_fn_fine, Print=True)
+    #correct = test(test_dataloader, model_fine2, loss_fn_fine, Print=True)
 tic = time.perf_counter()
 print('Needed time for the whole 2-level training: ', tic-toc)
 print("Done!")
