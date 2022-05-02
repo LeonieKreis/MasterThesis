@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 
-from Nets import ResBlock1, ResNet1_fine2, ResNet1_fine, ResNet1_coarse, restriction_matrix, prolongation_matrix, prolongation, restriction
+from Nets import ResBlock1, ResNet1_fine2, ResNet1_fine, ResNet1_coarse, prolongation, restriction
 
 dim_in = 28*28
 dim_out = 10
@@ -20,7 +20,7 @@ resnet_fine = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5)
 resnet_coarse = ResNet1_coarse(dim_in,reslayer_size,dim_out,ResBlock1,h=1)
 
 device = 'cpu'
-torch.set_num_threads(4) # uses 4 kernels (i have 8?)
+torch.set_num_threads(6) # uses 4 kernels (i have 8?)
 
 # Download training data from open datasets.
 training_data = datasets.MNIST(
@@ -213,6 +213,9 @@ def train_2level(dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coa
             print('norm of e2: ', torch.dot(e2, e2).item())
             check = torch.dot(e2,g)
             print('value of gradientf(x1)Te_2: ',check.item())
+        check = torch.dot(e2, g)
+        if check.item() >= 0:
+            print('e2 is not a descent direction!')
         ## 9) update fine weights (maybe with line search)
         ## for now, without line search
         x2 = torch.sub(x1,e2,alpha=-lr)
