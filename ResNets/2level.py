@@ -253,21 +253,13 @@ def test(dataloader, model, loss_fn, Print = False):
 ### Now we train the NN in different ways:
 ### We specify the data etc....
 
+# we set a fixed seed for the batch generation
 random.seed(1)
 
-dim_in = 28*28
-dim_out = 10
-reslayer_size = 10 #100
-no_reslayers_fine2 = 5
-no_reslayers_fine = 3
-no_reslayers = int((no_reslayers_fine+1)/2) # coarse
+# set no of kernels to use
+torch.set_num_threads(8) # uses 8 kernels (i have 8)
 
-resnet_fine2 = ResNet1_fine2(dim_in, reslayer_size, dim_out, ResBlock1, h=0.25)
-resnet_fine = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5)
-resnet_coarse = ResNet1_coarse(dim_in,reslayer_size,dim_out,ResBlock1,h=1)
-
-torch.set_num_threads(8) # uses 4 kernels (i have 8?)
-
+# we load the datasets:
 # Download training data from open datasets.
 training_data = datasets.MNIST(
     root="data",
@@ -285,66 +277,90 @@ test_data = datasets.MNIST(
 )
 
 #define batchsize for minibatch-SGD
-batch_size = 70#30 #60
+batch_size = 70
 
 # Create data loaders.
 train_dataloader = DataLoader(training_data, batch_size=batch_size)
 test_dataloader = DataLoader(test_data, batch_size=batch_size)
 
-model = resnet_fine
-model_fine2 = resnet_fine2
-model_fine = resnet_fine
-model_coarse = resnet_coarse
+
+# we build the models:
+dim_in = 28*28 # for images:X.shape[2]*X.shape[3]
+dim_out = 10
+reslayer_size = 10 #100
+#no_reslayers_fine2 = 5
+#no_reslayers_fine = 3
+#no_reslayers = int((no_reslayers_fine+1)/2) # coarse
+
+#for classical training
+resnet_classical_3 = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5) # 3 reslayers
+resnet_classical_5 = ResNet1_fine2(dim_in, reslayer_size, dim_out, ResBlock1, h=0.25) # 5 reslayers
 
 loss_fn = nn.CrossEntropyLoss()
-loss_fn_fine = loss_fn
-loss_fn_fine2 = loss_fn
-loss_fn_coarse = nn.CrossEntropyLoss() # the modified loss fun for multilevel will be defined during training!
-# #this loss function is needed for the gradients!
 
-optimizer_fine2 = torch.optim.SGD(model_fine2.parameters(), lr=1e-3)
-optimizer_fine = torch.optim.SGD(model_fine.parameters(), lr=1e-3)
-optimizer_coarse = torch.optim.SGD(model_coarse.parameters(), lr=1e-3)
-
-
-iteration_numbers = [1,1,1,1]
+lr_classical = 1e-3
+optimizer_3 = torch.optim.SGD(resnet_classical_3.parameters(), lr_classical)
+optimizer_5 = torch.optim.SGD(resnet_classical_5.parameters(), lr_classical)
 
 
 print('First classical training!')
+
 toc = time.perf_counter()
 epochs = 1 #2#5
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    #train_classical(train_dataloader, model, loss_fn, optimizer_fine,Print=True)
-    train_classical(train_dataloader, model_fine2, loss_fn_fine, optimizer_fine2, Print=True)
-    #correct = test(test_dataloader, model, loss_fn, Print=True)
-    correct = test(test_dataloader, model_fine2, loss_fn_fine, Print=True)
+    #train_classical(train_dataloader, resnet_classical_5, loss_fn, optimizer_5,Print=True)
+    train_classical(train_dataloader, resnet_classical_3, loss_fn, optimizer_3, Print=True)
+    #correct = test(test_dataloader, resnet_classical_5, loss_fn, Print=True)
+    correct = test(test_dataloader, resnet_classical_3, loss_fn, Print=True)
 tic = time.perf_counter()
 print('Needed time for the whole classical training: ', tic-toc)
 print(" \n")
 
 
 ## multilevel training:
+
+#for 2-level training
+resnet_fine2 = ResNet1_fine2(dim_in, reslayer_size, dim_out, ResBlock1, h=0.25) # 5 reslayers
+resnet_fine = ResNet1_fine(dim_in,reslayer_size,dim_out,ResBlock1,h=0.5) # 3 reslayers
+resnet_coarse = ResNet1_coarse(dim_in,reslayer_size,dim_out,ResBlock1,h=1) # 2 reslayers
+
+loss_fn_fine2 = nn.CrossEntropyLoss()
+loss_fn_fine = nn.CrossEntropyLoss()
+loss_fn_coarse = nn.CrossEntropyLoss() # the modified loss fun for multilevel will be defined during training!
+# #this loss function is needed for the gradients and used in building the new loss!
+
+lr_coarse = 1e-3
+lr_fine = 1e-3
+lr_fine2 = 1e-3
+optimizer_fine2 = torch.optim.SGD(resnet_fine2.parameters(), lr_fine2)
+optimizer_fine = torch.optim.SGD(resnet_fine.parameters(), lr_fine)
+optimizer_coarse = torch.optim.SGD(resnet_coarse.parameters(), lr_coarse)
+
+no_reslayers_coarse = 2
+no_reslayers_fine = 3
+
+iteration_numbers = [1,1,1,1]
+lr_xtra = 1e-3
+
 print('Now 2-level-training!')
 toc = time.perf_counter()
-lr = 5e-2
-no_reslayers_coarse=2
-no_reslayers_fine = 3
+
 epochs = 1
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
-    train_2level(train_dataloader, model_fine, model_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr, iteration_numbers, no_reslayers_coarse, Print=True)
-    #train_2level(train_dataloader, model_fine2, model_fine, loss_fn_fine, loss_fn_coarse, optimizer_fine2,
-                 #optimizer_fine, lr, no_reslayers_fine, Print=True)
-    correct = test(test_dataloader, model_fine, loss_fn_fine, Print=True)
-    #correct = test(test_dataloader, model_fine2, loss_fn_fine, Print=True)
+    train_2level(train_dataloader, resnet_fine, resnet_coarse, loss_fn_fine, loss_fn_coarse, optimizer_fine, optimizer_coarse, lr_xtra, iteration_numbers, no_reslayers_coarse, Print=True) #3-2 layers
+    #train_2level(train_dataloader, resnet_fine2, resnet_fine, loss_fn_fine2, loss_fn_fine, optimizer_fine2,
+                 #optimizer_fine, lr_xtra, no_reslayers_fine, Print=True) # 5-3 layers
+    correct = test(test_dataloader, resnet_fine, loss_fn_fine, Print=True)
+    #correct = test(test_dataloader, resnet_fine2, loss_fn_fine2, Print=True)
 tic = time.perf_counter()
 print('Needed time for the whole 2-level training: ', tic-toc)
 print("Done!")
 
 
 
-'''
+
 ## Now we train systematically with different batchsizes (all other hyperparameters are fixed)
 ## we write the results in a .txt file
 
@@ -516,4 +532,4 @@ for rw in rw_list:
         file1.write("width of reslayers: "+str(rw) + "\n")
         file1.write("2-level training: ")
         file1.write(text2)
-        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n") '''
+        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n")
