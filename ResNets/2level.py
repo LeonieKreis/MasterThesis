@@ -364,7 +364,11 @@ print("Done!")
 ## Now we train systematically with different batchsizes (all other hyperparameters are fixed)
 ## we write the results in a .txt file
 
+train_systematically = False
+if train_systematically = True:
+    #train systematically #->todo
 
+'''
 with open("mytest_bs.txt", "w") as file1:
     file1.write("Training the Net on MNIST data set, with res net with "+str(no_reslayers_fine)+" reslayers (on fine level) for different batchsizes:\n")
     file1.write("lr = "+str(lr)+" and reslayersize = "+str(reslayer_size)+"\n")
@@ -532,4 +536,4 @@ for rw in rw_list:
         file1.write("width of reslayers: "+str(rw) + "\n")
         file1.write("2-level training: ")
         file1.write(text2)
-        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n")
+        file1.write(f"Accuracy: {(100*correct):>0.1f}% \n")  '''

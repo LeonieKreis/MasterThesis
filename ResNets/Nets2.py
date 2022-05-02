@@ -59,7 +59,7 @@ def get_no_of_coarser_reslayers(no_res_fine, steps=1):
         no_res_fine = (no_res_fine+1)/2
     return int(no_res_fine)
 
-def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_levels,coarse_no_reslayers,dims,ResBlock,act_fun="ReLU", Print=False):
+def train_multilevel(dataloader,model_list, loss_fns, optimizers, lr, iteration_numbers,no_levels,coarse_no_reslayers,dims, Print=False):
     toc = time.perf_counter()
     def nested_iteration(no_iteration,current_no_reslayers, model_coarse, model_fine, loss_fn_coarse,optimizer_coarse, dims):
         dim_in = dims[0]
@@ -201,7 +201,6 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             no_reslayers_coarse = get_no_of_finer_reslayers(no_reslayers_coarse)
         #return 0
 
-    model_list = gen_hierarch_models(no_levels, coarse_no_reslayers, dims, ResBlock, act_fun)
     # wir brauchen auch vermutlich eine list von optimierern und loss functions for each level
     size = len(dataloader.dataset)
     for i in range(no_levels):
@@ -215,14 +214,15 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             toc2 = time.perf_counter()
         X,y = X.to(device),y.to(device)
 
+        starting_no_reslayers = get_no_of_finer_reslayers(coarse_no_reslayers)
         # for schleife für levels
         for i in range(no_levels -1):
             # nested iteration
             current_no_reslayers = coarse_no_reslayers
             nested_iteration(iteration_numbers[0],current_no_reslayers,model_list[i],model_list[i+1],loss_fns[i],optimizers[i],dims)
             #v-cycle (with variying depth)
-            starting_no_reslayers = #todo: how do we compute that?
             Vcycle(i+1,iteration_numbers[1:],model_list[0:i+2], optimizers[0:i+2], loss_fns[0:i+2],dims,starting_no_reslayers)
+            starting_no_reslayers =  get_no_of_finer_reslayers(starting_no_reslayers)
             coarse_no_reslayers = get_no_of_finer_reslayers(coarse_no_reslayers)
 
         if batch % 100 == 0:
@@ -231,7 +231,7 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             if Print:
                 print('iteration no. '+str(current)+'of'+str(size)) #batch*len(X))
-                print('loss',loss_fine.item())   #todo what is loss_fine?
+                print('loss',loss_fns[len(loss_fns)-1].item())
             tic2 = time.perf_counter()
             if Print:
                 print('needed time for this batch: ', tic2 - toc2)
@@ -240,3 +240,4 @@ def train_multilevel(dataloader,loss_fns, optimizers, lr, iteration_numbers,no_l
         print('needed time for one epoch: ', tic-toc)
 
 
+'''before multilevel trianing: generate needed models via: model_list = gen_hierarch_models(no_levels, coarse_no_reslayers, dims, ResBlock, act_fun)'''
