@@ -61,7 +61,7 @@ lr_classical = 1e-3
 optimizer_3 = torch.optim.SGD(resnet_classical_3.parameters(), lr_classical)
 optimizer_5 = torch.optim.SGD(resnet_classical_5.parameters(), lr_classical)
 
-
+'''
 print('First classical training!')
 
 toc = time.perf_counter()
@@ -74,7 +74,7 @@ for t in range(epochs):
     correct = test(test_dataloader, resnet_classical_3, loss_fn, Print=True)
 tic = time.perf_counter()
 print('Needed time for the whole classical training: ', tic-toc)
-print(" \n")
+print(" \n") '''
 
 
 ## multilevel training:

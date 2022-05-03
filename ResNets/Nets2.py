@@ -258,6 +258,7 @@ def make_resnet(dims: list,ResBlock, no_reslayers,h=1. ,act_fun = "ReLU"):
         AF = nn.Sigmoid()
 
     layer_dict = OrderedDict()
+    layer_dict[f'flatten0'] = nn.Flatten()
     layer_dict[f'linear0'] = nn.Linear(in_features=dims[0], out_features=dims[1], bias=False)
     #layer_dict[f'actfun0'] = AF
     for k in range(1,no_reslayers+1):
@@ -471,14 +472,13 @@ def train_multilevel(dataloader,model_list, loss_fns, optimizers, lr, iteration_
             #loss = loss_fn_fine.item()
             #print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
             if Print:
-                print('iteration no. '+str(current)+'of'+str(size)) #batch*len(X))
-                print('loss',loss_fns[len(loss_fns)-1].item())
+                print('iteration no. '+str(current)+' of '+str(size)+'  loss',loss_fns[len(loss_fns)-1](model_list[len(loss_fns)-1](X),y).item())
             tic2 = time.perf_counter()
             if Print:
-                print('needed time for this batch: ', tic2 - toc2)
+                print('batchtime: ', tic2 - toc2)
     tic = time.perf_counter()
     if Print:
-        print('needed time for one epoch: ', tic-toc)
+        print('epochtime: ', tic-toc)
 
 
 '''before multilevel trianing: generate needed models via: model_list = gen_hierarch_models(no_levels, coarse_no_reslayers, dims, ResBlock, act_fun)'''
